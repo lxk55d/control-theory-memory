@@ -59,32 +59,27 @@ scripts/
 ├── pid_controller.py           第二回路 · PID 自适应调参 + 边界放宽
 │
 ├── session_analyzer.py         观测层 · 会话日志分析 + 主题提取
-├── memory_enricher.py           完善层 · 从会话丰富记忆内容
-├── memory_linker.py             关联层 · 自动发现 [[link]]
+├── memory_enricher.py          完善层 · 从会话丰富记忆内容
+├── memory_linker.py            关联层 · 自动发现 [[link]]
 │
-├── meta_learner.py              第三回路 · 元学习诊断 + 自动合并
-├── evolution_engine.py          进化层 · 知识空白检测 + 主动提问
+├── meta_learner.py             第三回路 · 元学习诊断 + 自动合并
+├── evolution_engine.py         进化层 · 知识空白检测 + 主动提问
 │
-├── collaboration_engine.py      协作层 · 多项目 + 导出/导入 + Hindsight
-├── semantic_retriever.py        检索层 · Hindsight Recall API 语义搜索
+├── collaboration_engine.py     协作层 · 多项目 + 导出/导入 + Hindsight
+├── semantic_retriever.py       检索层 · Hindsight Recall API 语义搜索
 │
-├── health_check.py              健康层 · 外部依赖监控
-├── error_alert.py               告警层 · 分级错误收集 + 自动重试
-├── memory_reclaimer.py          回收层 · 低信号记忆清理
+├── health_check.py             健康层 · 外部依赖监控
+├── error_alert.py              告警层 · 分级错误收集 + 自动重试
+├── memory_reclaimer.py         回收层 · 低信号记忆清理
 │
-├── scale_test.py                压力测试 · 合成记忆验证规模行为
-├── test_suite.py                测试套件 · 15/15 通过
+├── scale_test.py               压力测试 · 合成记忆验证规模行为
+├── test_suite.py               测试套件 · 15/15 通过
 │
-├── generate_status.py           状态生成 · CLAUDE.md 动态块
-├── generate_dashboard.py        仪表板 · 自包含 HTML
-├── generate_graph.py            知识图谱 · 力导向网络图
+├── generate_status.py          状态生成 · CLAUDE.md 动态块
+├── generate_dashboard.py       仪表板 · 自包含 HTML
+├── generate_graph.py           知识图谱 · 力导向网络图
 │
-├── memory_session_hook.py       Stop 钩子入口 · 完整自迭代流水线
-├── hindsight_backfill.py        工具 · Hindsight 数据回填
-├── hindsight_strip.py           工具 · Hindsight 数据清理
-├── hindsight_safe_patch.sh      工具 · 安全补丁
-│
-└── qixing_etf_daily_report.py   量化 · 七星 ETF 日报（独立组件）
+└── memory_session_hook.py      Stop 钩子入口 · 完整自迭代流水线
 ```
 
 ### 核心算法
@@ -170,7 +165,7 @@ metadata:
 | 指标 | 当前值 |
 |------|--------|
 | Python 组件 | 19 个脚本 |
-| 代码行数 | ~5700 行 |
+| 代码行数 | ~4800 行 |
 | 测试 | 15/15 通过 |
 | 遗忘控制 O(n) | 10000 条预估 < 1s |
 | PID 调参 | O(1) |

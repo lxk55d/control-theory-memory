@@ -25,3 +25,4 @@
 ```
 访问更新 → 遗忘衰减 → PID调参 → 会话分析 → 自动创建记忆 → 内容完善 → 元学习诊断 → 合并重复 → 边界放宽 → 状态报告
 ```
+- [Karpathy 编码准则已安装](karpathy-guidelines-installed.md) — 4条LLM编码准则写入CLAUDE.md

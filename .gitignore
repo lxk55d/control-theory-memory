@@ -43,3 +43,15 @@ shell-snapshots/
 # Temp files
 /tmp/
 *.log
+# Claude Code local settings
+.claude/settings.local.json
+
+# Auto-synced hindsight memories
+.claude/projects/-home-lxk/memory/hindsight-*.md
+.claude/projects/-home-lxk/memory/controller_config.json
+.claude/projects/-home-lxk/memory/pid_state.json
+.claude/projects/-home-lxk/memory/param_bounds.json
+.claude/projects/-home-lxk/memory/error_log.jsonl
+.claude/projects/-home-lxk/memory/memory_history.jsonl
+.claude/projects/-home-lxk/memory/health_history.jsonl
+.claude/projects/-home-lxk/memory/knowledge_gaps.jsonl

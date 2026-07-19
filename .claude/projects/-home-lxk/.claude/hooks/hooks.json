@@ -1,0 +1,16 @@
+{
+  "description": "记忆系统自调节钩子 — 每次会话结束时自动更新访问计数并运行遗忘控制器",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/lxk/scripts/memory_session_hook.py",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

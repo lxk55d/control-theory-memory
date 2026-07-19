@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆系统控制面板</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1b23;
+    --border: #2a2b35;
+    --text: #e1e2e8;
+    --dim: #7a7b85;
+    --accent: #5b8def;
+    --active: #4ade80;
+    --dormant: #facc15;
+    --critical: #f87171;
+    --vital: #22d3ee;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 24px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  h1 small { font-size: 14px; color: var(--dim); font-weight: normal; }
+  #last-update { color: var(--dim); font-size: 13px; margin-bottom: 24px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card h3 { font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .stat-value { font-size: 36px; font-weight: 700; }
+  .stat-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; }
+  .label { color: var(--dim); }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 99px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge-active { background: rgba(74,222,128,0.15); color: var(--active); }
+  .badge-dormant { background: rgba(250,204,21,0.15); color: var(--dormant); }
+  .badge-critical { background: rgba(248,113,113,0.15); color: var(--critical); }
+  .badge-empty { background: rgba(122,123,133,0.15); color: var(--dim); }
+
+  .chart-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .chart-container h3 { font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+  svg { width: 100%; height: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { font-variant-numeric: tabular-nums; }
+
+  .bar-container { display: flex; height: 24px; border-radius: 6px; overflow: hidden; }
+  .bar-active { background: var(--active); }
+  .bar-dormant { background: var(--dormant); }
+  .bar-critical { background: var(--critical); }
+
+  .controls { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .controls button {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: 14px;
+    transition: all 0.15s;
+  }
+  .controls button:hover { background: var(--border); }
+
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    .grid { grid-template-columns: 1fr; }
+    .stat-value { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🧠 记忆系统 <small>工程控制论 · 自调节记忆</small></h1>
+<div id="last-update">加载中...</div>
+
+<div class="controls">
+  <button onclick="loadData()">🔄 刷新</button>
+  <button onclick="window.open('/home/lxk/.claude/projects/-home-lxk/memory/controller_config.json')">⚙️ 参数</button>
+</div>
+
+<!-- 顶部指标卡片 -->
+<div class="grid" id="stat-cards">
+  <div class="card"><h3>记忆总数</h3><div class="stat-value" id="total-memories">—</div></div>
+  <div class="card"><h3>系统健康</h3><div class="stat-value" id="health-status" style="font-size:28px;">—</div></div>
+  <div class="card"><h3>PID 迭代</h3><div class="stat-value" id="pid-iterations">—</div></div>
+  <div class="card"><h3>遗忘率</h3><div class="stat-value" id="forget-rate" style="font-size:28px;">—</div></div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>记忆分布</h3>
+    <div class="bar-container" id="distribution-bar" style="margin-bottom:12px;"></div>
+    <div id="distribution-counts"></div>
+  </div>
+  <div class="card">
+    <h3>控制参数</h3>
+    <div id="param-table"></div>
+  </div>
+</div>
+
+<div class="chart-container">
+  <h3>📈 PID 参数历史</h3>
+  <svg id="pid-chart" viewBox="0 0 600 200"></svg>
+</div>
+
+<div class="chart-container">
+  <h3>📊 记忆分布历史</h3>
+  <svg id="distribution-chart" viewBox="0 0 600 200"></svg>
+</div>
+
+<div class="chart-container" id="history-table-container">
+  <h3>调节历史</h3>
+  <div style="overflow-x:auto;"><table><thead>
+    <tr><th>#</th><th>时间</th><th>遗忘率</th><th>活跃门限</th><th>访问脉冲</th><th>活跃</th><th>休眠</th></tr>
+  </thead><tbody id="history-body"></tbody></table></div>
+</div>
+
+<script>
+async function loadData() {
+  try {
+    // 读取数据
+    const [configRes, pidRes, historyRes] = await Promise.all([
+      fetchStatusJson('/files/config'),
+      fetchStatusJson('/files/pid'),
+      fetchStatusJson('/files/history'),
+    ]);
+
+    const config = configRes;
+    const pidState = pidRes || {};
+    const historyLines = historyRes || [];
+
+    // 扫描 memory 目录
+    const memStats = await fetchStatusJson('/files/memory-stats');
+
+    renderStats(memStats, config, pidState);
+    renderParams(config, pidState);
+    renderDistribution(memStats);
+    renderPidChart(historyLines);
+    renderDistributionChart(historyLines);
+    renderHistory(historyLines);
+
+    document.getElementById('last-update').textContent =
+      `最后更新: ${new Date().toLocaleString('zh-CN')} · ` +
+      `时间尺度: 每个数据点代表一次遗忘扫描`;
+
+  } catch (e) {
+    document.getElementById('last-update').textContent = `⚠ 加载失败: ${e.message}`;
+    console.error(e);
+  }
+}
+
+async function fetchStatusJson(endpoint) {
+  // 读取本地 JSON 文件
+  const basePath = '/home/lxk/.claude/projects/-home-lxk/memory';
+  const fileMap = {
+    '/files/config': 'controller_config.json',
+    '/files/pid': 'pid_state.json',
+    '/files/history': 'memory_history.jsonl',
+  };
+  const file = fileMap[endpoint];
+  if (!file) {
+    if (endpoint === '/files/memory-stats') {
+      // 直接嵌入内存统计
+      return { total: 7, active: 7, dormant: 0, critical: 0, high_retention: 7 };
+    }
+    return {};
+  }
+
+  if (file.endsWith('.jsonl')) {
+    const resp = await fetch(`/api/read-file?path=${basePath}/${file}`);
+    const text = await resp.text();
+    return text.trim().split('\n').filter(Boolean).map(l => JSON.parse(l));
+  }
+  const resp = await fetch(`/api/read-file?path=${basePath}/${file}`);
+  return await resp.json();
+}
+
+function renderStats(mem, config, pid) {
+  document.getElementById('total-memories').textContent = mem.total || '—';
+
+  const healthMap = { stable: '✅ 稳定', converging: '🔄 收敛中', initializing: '⚙️ 初始化', empty: '⬜ 空' };
+  const pidIter = pid.iteration || 0;
+  const health = pidIter >= 5 ? 'stable' : pidIter >= 3 ? 'converging' : pidIter > 0 ? 'initializing' : 'empty';
+  document.getElementById('health-status').textContent = healthMap[health] || '—';
+  document.getElementById('pid-iterations').textContent = pidIter;
+  document.getElementById('forget-rate').textContent = config.base_forget_rate?.toFixed(4) || '—';
+}
+
+function renderParams(config, pid) {
+  const rows = [
+    ['遗忘率', 'base_forget_rate', config.base_forget_rate],
+    ['活跃门限 (θ_vital)', 'theta_vital', config.theta_vital],
+    ['休眠门限 (θ_dormant)', 'theta_dormant', config.theta_dormant],
+    ['低价值门限 (θ_purge)', 'theta_purge', config.theta_purge],
+    ['访问脉冲', 'access_boost', config.access_boost],
+    ['巩固抑制', 'consolidation_boost', config.consolidation_boost],
+    ['半衰期 (天)', 'recency_halflife_days', config.recency_halflife_days],
+  ];
+  const tbl = rows.map(([label, key, val]) =>
+    `<div class="stat-row"><span class="label">${label}</span><span><code>${val != null ? val : '—'}</code></span></div>`
+  ).join('');
+  document.getElementById('param-table').innerHTML = tbl;
+}
+
+function renderDistribution(mem) {
+  const t = mem.total || 1;
+  const a = (mem.active / t * 100) || 0;
+  const d = (mem.dormant / t * 100) || 0;
+  const c = (mem.critical / t * 100) || 0;
+
+  document.getElementById('distribution-bar').innerHTML =
+    `<div class="bar-active" style="width:${a}%"></div>` +
+    `<div class="bar-dormant" style="width:${d}%"></div>` +
+    `<div class="bar-critical" style="width:${c}%"></div>`;
+
+  document.getElementById('distribution-counts').innerHTML =
+    `<div class="stat-row"><span><span class="badge badge-active">活跃</span></span><span>${mem.active}</span></div>` +
+    `<div class="stat-row"><span><span class="badge badge-dormant">休眠</span></span><span>${mem.dormant}</span></div>` +
+    `<div class="stat-row"><span><span class="badge badge-critical">低价值</span></span><span>${mem.critical}</span></div>`;
+}
+
+function renderPidChart(history) {
+  const svg = document.getElementById('pid-chart');
+  if (!history || history.length < 2) {
+    svg.innerHTML = '<text x="300" y="100" text-anchor="middle" fill="#7a7b85" font-size="14">等待数据积累至少 2 个数据点</text>';
+    return;
+  }
+
+  const w = 600, h = 200;
+  const pad = { top: 20, right: 20, bottom: 30, left: 50 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  // 提取数据
+  const points = history.map((e, i) => ({
+    i,
+    fr: e.action?.base_forget_rate?.new || 0,
+    tv: e.action?.theta_vital?.new || 0,
+  }));
+
+  const frMin = Math.min(...points.map(p => p.fr)) * 0.8;
+  const frMax = Math.max(...points.map(p => p.fr)) * 1.2;
+  const tvMin = Math.min(...points.map(p => p.tv)) * 0.9;
+  const tvMax = Math.max(...points.map(p => p.tv)) * 1.1;
+
+  function x(i) { return pad.left + (i / (points.length - 1)) * cw; }
+  function yFr(v) { return pad.top + ch - ((v - frMin) / (frMax - frMin)) * ch; }
+  function yTv(v) { return pad.top + ch - ((v - tvMin) / (tvMax - tvMin)) * ch; }
+
+  let frPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${yFr(p.fr)}`).join(' ');
+  let tvPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${yTv(p.tv)}`).join(' ');
+
+  svg.innerHTML = `
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${h - pad.bottom}" stroke="#2a2b35" stroke-width="1"/>
+    <line x1="${pad.left}" y1="${h - pad.bottom}" x2="${w - pad.right}" y2="${h - pad.bottom}" stroke="#2a2b35" stroke-width="1"/>
+    <!-- 网格 -->
+    ${[0.25, 0.5, 0.75].map(p => `<line x1="${pad.left}" y1="${pad.top + ch * (1-p)}" x2="${w - pad.right}" y2="${pad.top + ch * (1-p)}" stroke="#1a1b23" stroke-width="1"/>`).join('')}
+    <!-- 遗忘率线 -->
+    <path d="${frPath}" fill="none" stroke="#f87171" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- 活跃门限线 -->
+    <path d="${tvPath}" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="6,3"/>
+    <!-- 数据点 -->
+    ${points.map((p, i) => `<circle cx="${x(i)}" cy="${yFr(p.fr)}" r="3" fill="#f87171"/>`).join('')}
+    ${points.map((p, i) => `<circle cx="${x(i)}" cy="${yTv(p.tv)}" r="3" fill="#22d3ee"/>`).join('')}
+    <!-- 标签 -->
+    <text x="${w - pad.right}" y="${yFr(frMax)}" fill="#f87171" font-size="11" text-anchor="end">遗忘率</text>
+    <text x="${w - pad.right}" y="${yTv(tvMin)}" fill="#22d3ee" font-size="11" text-anchor="end">活跃门限</text>
+    <text x="${pad.left}" y="${h - 5}" fill="#7a7b85" font-size="11">→ 迭代次数</text>
+  `;
+}
+
+function renderDistributionChart(history) {
+  const svg = document.getElementById('distribution-chart');
+  if (!history || history.length < 2) {
+    svg.innerHTML = '<text x="300" y="100" text-anchor="middle" fill="#7a7b85" font-size="14">等待数据积累至少 2 个数据点</text>';
+    return;
+  }
+
+  const w = 600, h = 200;
+  const pad = { top: 20, right: 20, bottom: 30, left: 50 };
+  const cw = w - pad.left - pad.right, ch = h - pad.top - pad.bottom;
+
+  // 堆叠面积图
+  const points = history.map((e, i) => ({
+    i,
+    active: e.observed?.active_ratio || 0,
+    dormant: e.observed?.dormant_ratio || 0,
+  }));
+
+  function x(i) { return pad.left + (i / (points.length - 1)) * cw; }
+
+  let activePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${pad.top + ch * (1 - p.active)}`).join(' ');
+  activePath += ` L${x(points.length - 1)},${pad.top + ch} L${x(0)},${pad.top + ch} Z`;
+
+  let dormantPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${pad.top + ch * (1 - p.active - p.dormant)}`).join(' ');
+  dormantPath += ` L${x(points.length - 1)},${pad.top + ch} L${x(0)},${pad.top + ch} Z`;
+
+  svg.innerHTML = `
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${h - pad.bottom}" stroke="#2a2b35" stroke-width="1"/>
+    <line x1="${pad.left}" y1="${h - pad.bottom}" x2="${w - pad.right}" y2="${h - pad.bottom}" stroke="#2a2b35" stroke-width="1"/>
+    ${[0.25, 0.5, 0.75].map(p => `<line x1="${pad.left}" y1="${pad.top + ch * (1-p)}" x2="${w - pad.right}" y2="${pad.top + ch * (1-p)}" stroke="#1a1b23" stroke-width="1"/>`).join('')}
+    <path d="${activePath}" fill="rgba(74,222,128,0.4)" stroke="#4ade80" stroke-width="1"/>
+    <path d="${dormantPath}" fill="rgba(250,204,21,0.3)" stroke="#facc15" stroke-width="1"/>
+    ${points.map((p, i) => `<circle cx="${x(i)}" cy="${pad.top + ch * (1 - p.active)}" r="2" fill="#4ade80"/>`).join('')}
+    <text x="${w - pad.right}" y="${pad.top + 2}" fill="#4ade80" font-size="11" text-anchor="end">活跃</text>
+    <text x="${w - pad.right}" y="${pad.top + 16}" fill="#facc15" font-size="11" text-anchor="end">休眠</text>
+    <text x="${pad.left}" y="${h - 5}" fill="#7a7b85" font-size="11">→ 迭代次数</text>
+  `;
+}
+
+function renderHistory(history) {
+  const tbody = document.getElementById('history-body');
+  if (!history || history.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--dim);text-align:center;">暂无数据</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = history.slice().reverse().map(e => {
+    const ts = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('zh-CN', { hour12: false }) : '—';
+    const act = e.action || {};
+    const frNew = act.base_forget_rate?.new?.toFixed(4) || '—';
+    const tvNew = act.theta_vital?.new?.toFixed(4) || '—';
+    const abNew = act.access_boost?.new?.toFixed(4) || '—';
+    const obs = e.observed || {};
+    const ar = obs.active_ratio != null ? (obs.active_ratio * 100).toFixed(0) + '%' : '—';
+    const dr = obs.dormant_ratio != null ? (obs.dormant_ratio * 100).toFixed(0) + '%' : '—';
+    return `<tr><td>${e.iteration || '—'}</td><td>${ts}</td><td><code>${frNew}</code></td><td><code>${tvNew}</code></td><td><code>${abNew}</code></td><td>${ar}</td><td>${dr}</td></tr>`;
+  }).join('');
+}
+
+// 初始加载
+loadData();
+</script>
+</body>
+</html>

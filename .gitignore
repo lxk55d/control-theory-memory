@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.venv/
+env/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Claude Code sessions
+session-env/
+tasks/
+telemetry/
+cache/
+file-history/
+backups/
+shell-snapshots/
+*.jsonl
+
+# Memory system session data (keep memory files, exclude session logs)
+.claude/projects/-home-lxk/*.jsonl
+.claude/projects/-home-lxk/2fd9c154-fdaa-45a0-bfe7-3052aac7a3c1/
+
+# System files
+.claude/sessions/
+.claude/.last-cleanup
+.claude/.last-update-result.json
+.claude/history.jsonl
+
+# Temp files
+/tmp/
+*.log

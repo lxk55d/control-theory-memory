@@ -55,3 +55,14 @@ shell-snapshots/
 .claude/projects/-home-lxk/memory/memory_history.jsonl
 .claude/projects/-home-lxk/memory/health_history.jsonl
 .claude/projects/-home-lxk/memory/knowledge_gaps.jsonl
+.claude/projects/-home-lxk/memory/memory-exports/
+
+# Claude Code runtime dirs (not memory content)
+.claude/plans/
+.claude/tasks/
+.claude/backups/
+.claude/telemetry/
+.claude/cache/
+.claude/file-history/
+.claude/shell-snapshots/
+.claude/ide/

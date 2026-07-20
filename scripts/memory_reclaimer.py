@@ -74,9 +74,9 @@ def read_all() -> list[dict]:
 
 
 def reclaim_hindsight(memories: list[dict], dry_run: bool = False) -> int:
-    """hindsight 记忆上限 8 条，超过的按质量排序清理"""
+    """hindsight 记忆：清理无正文内容的空 stub，保留上限 8 条"""
     h_entries = [m for m in memories if m["is_hindsight"]]
-    if len(h_entries) <= 8:
+    if not h_entries:
         return 0
 
     # 评分：retention + consolidation + access_count + 核心主题匹配 + body 长度
@@ -87,16 +87,23 @@ def reclaim_hindsight(memories: list[dict], dry_run: bool = False) -> int:
         score += min(m["body_length"] / 200, 1)
         m["_score"] = round(score, 2)
 
-    # 按评分排序，保留前 8
+    # 1. 先清理无正文的空 stub（不论数量）
+    stubs = [m for m in h_entries if m["body_length"] == 0 or m.get("is_auto", False)]
+    # 2. 如果还有超限（>8），按评分清理最低分的
     h_entries.sort(key=lambda m: m["_score"], reverse=True)
-    to_remove = h_entries[8:]
+    surplus = h_entries[8:] if len(h_entries) > 8 else []
+    # 合并：stub 优先清理，再补超限
+    to_remove = {m["path"]: m for m in stubs}
+    for m in surplus:
+        if m["path"] not in to_remove:
+            to_remove[m["path"]] = m
 
     removed = 0
-    for m in to_remove:
+    for path, m in to_remove.items():
         if not dry_run:
             try:
-                os.remove(m["path"])
-                print(f"  🗑 hindsight: {m['fname']} (score={m['_score']}, retention={m['retention']})")
+                os.remove(path)
+                print(f"  🗑 hindsight: {m['fname']} (score={m['_score']}, body={m['body_length']}B)")
                 removed += 1
             except OSError as e:
                 print(f"  ⚠ 删除失败 {m['fname']}: {e}")
@@ -108,9 +115,11 @@ def reclaim_hindsight(memories: list[dict], dry_run: bool = False) -> int:
 
 
 def reclaim_low_signal(memories: list[dict], dry_run: bool = False) -> int:
-    """低信号记忆清理：自动创建的 stub 且 consolidation < 0.35 且 created > 24h"""
-    auto_stubs = [m for m in memories if m["is_auto"] and m["consolidation"] < 0.35 and not m["is_hindsight"]]
-    auto_stubs += [m for m in memories if m["is_hindsight"] and m["consolidation"] < 0.35]
+    """低信号记忆清理：自动创建的 stub 且 body 为空且 created > 24h（hindsight 减为 6h）"""
+    auto_stubs = [m for m in memories if m.get("is_auto", False) and m["body_length"] == 0 and not m["is_hindsight"]]
+    # hindsight stub：正文为空或 consolidation < 0.35
+    hindsight_stubs = [m for m in memories if m["is_hindsight"] and (m["body_length"] == 0 or m["consolidation"] < 0.35)]
+    all_stubs = auto_stubs + hindsight_stubs
     if not auto_stubs:
         return 0
 
@@ -195,10 +204,11 @@ def reclaim_all(dry_run: bool = False) -> dict:
 
 def main():
     import sys
-    dry_run = "--dry-run" in sys.argv or True  # default dry-run
+    dry_run = "--dry-run" in sys.argv
     do_apply = "--force" in sys.argv
     if do_apply:
         dry_run = False
+    # 默认 --dry-run （安全），除非 --force
 
     stats = reclaim_all(dry_run=dry_run)
 

@@ -309,6 +309,7 @@ def scan_memories(config: dict, dry_run: bool = False) -> dict:
         created_raw = meta.get("created") or meta.get("modified") or now.isoformat()
         modified_raw = meta.get("modified") or now.isoformat()
         last_access_raw = meta.get("last_accessed") or created_raw
+        last_checked_raw = meta.get("last_checked") or created_raw
         access_count = int(meta.get("access_count", 0))
 
         retention = float(meta.get("retention_strength", config["initial_retention"]))
@@ -325,15 +326,18 @@ def scan_memories(config: dict, dry_run: bool = False) -> dict:
         created_dt = parse_dt(created_raw)
         modified_dt = parse_dt(modified_raw)
         last_access_dt = parse_dt(last_access_raw)
+        last_checked_dt = parse_dt(last_checked_raw)
 
         days_since_creation = (now - created_dt).total_seconds() / 86400
         days_since_mod = (now - modified_dt).total_seconds() / 86400
         days_since_access = (now - last_access_dt).total_seconds() / 86400
+        days_since_checked = (now - last_checked_dt).total_seconds() / 86400
 
         # ── 计算衰减 ──
         recency_factor = compute_recency_factor(days_since_access, config["recency_halflife_days"])
 
-        delta_days = max(0.01, days_since_mod if days_since_mod > 0 else days_since_creation)
+        # delta_days: 基于距上次扫描的时间，而非修改时间（修改时间会被扫描自身的写入更新）
+        delta_days = max(0.01, days_since_checked)
 
         # 计算 centrality（从 metadata 读取，或默认）
         centrality = float(meta.get("centrality", config["default_centrality"]))
@@ -374,14 +378,23 @@ def scan_memories(config: dict, dry_run: bool = False) -> dict:
 
         # 更新 retention（非 dry-run）
         updated = False
-        if not dry_run and abs(new_retention - retention) > 0.001:
+        if not dry_run:
             if "metadata" in metadata and isinstance(metadata["metadata"], dict):
-                metadata["metadata"]["retention_strength"] = round(new_retention, 4)
-                metadata["metadata"]["modified"] = now.isoformat()
-                metadata["metadata"]["last_checked"] = now.isoformat()
-                write_memory_file(str(fpath), metadata, body)
-                updated = True
-                stats["updated"] += 1
+                # 消耗访问脉冲：将 access_count 置零（脉冲已由公式计入 retention 中）
+                was_updated = False
+                if access_count > 0:
+                    metadata["metadata"]["access_count"] = 0
+                    metadata["metadata"]["last_accessed"] = now.isoformat()
+                    was_updated = True
+                if abs(new_retention - retention) > 0.001:
+                    metadata["metadata"]["retention_strength"] = round(new_retention, 4)
+                    was_updated = True
+                if was_updated:
+                    metadata["metadata"]["modified"] = now.isoformat()
+                    metadata["metadata"]["last_checked"] = now.isoformat()
+                    write_memory_file(str(fpath), metadata, body)
+                    updated = True
+                    stats["updated"] += 1
 
         # ── 显示 ──
         retention_bar = "█" * int(new_retention * 20) + "░" * (20 - int(new_retention * 20))

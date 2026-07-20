@@ -119,17 +119,26 @@ def read_all_memories(memory_dir: str = None) -> list[dict]:
             continue
         mem = read_memory_file(str(fpath))
         if mem:
-            # 提取额外字段
+            # 提取额外字段 — 优先从 metadata 下读取，兼顾平铺结构
             fm = mem["frontmatter"]
             body = mem["body"]
             import re as rx
+
+            # 辅助：从顶层或 metadata 下取值
+            def _get(key: str, default):
+                meta = fm.get("metadata", {}) or {}
+                val = meta.get(key)
+                if val is None:
+                    val = fm.get(key)
+                return val if val is not None else default
+
             mem["description"] = fm.get("description", "")
-            mem["type"] = fm.get("type", "memory")
-            mem["consolidation"] = float(fm.get("consolidation_level", 0.3))
-            mem["retention"] = float(fm.get("retention_strength", 0.5))
-            mem["access_count"] = int(fm.get("access_count", 0))
-            mem["created"] = fm.get("created", "")
-            mem["modified"] = fm.get("modified", "")
+            mem["type"] = _get("type", "memory")
+            mem["consolidation"] = float(_get("consolidation_level", 0.3))
+            mem["retention"] = float(_get("retention_strength", 0.5))
+            mem["access_count"] = int(_get("access_count", 0))
+            mem["created"] = _get("created", "")
+            mem["modified"] = _get("modified", "")
             mem["is_auto"] = "自动" in body or "待后续会话完善" in (fm.get("description", ""))
             mem["is_hindsight"] = mem["name"].lower().startswith("hindsight-")
             mem["body_length"] = len(body)
@@ -172,6 +181,17 @@ def load_config(path: str = None) -> dict:
     return dict(DEFAULT_CONFIG)
 
 
+def save_config(config: dict, path: str = None) -> bool:
+    """保存控制器配置"""
+    cfg_path = Path(path or CONFIG_PATH)
+    try:
+        cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        cfg_path.write_text(json.dumps(config, indent=2, ensure_ascii=False))
+        return True
+    except Exception:
+        return False
+
+
 # ════════════════════════════════════════════════════════════════════
 # PID 状态管理
 # ════════════════════════════════════════════════════════════════════
@@ -180,7 +200,31 @@ def load_pid_state(path: str = None) -> dict:
     p = Path(path or PID_STATE_PATH)
     if p.exists():
         try:
-            return json.loads(p.read_text())
+            state = json.loads(p.read_text())
+            # 验证：如果迭代与 history 不匹配，以 history 为准
+            try:
+                hp = Path(path.replace("pid_state.json", "memory_history.jsonl") if path else HISTORY_PATH)
+                if hp.exists():
+                    max_iter = 0
+                    with open(hp) as f:
+                        for line in f:
+                            try:
+                                e = json.loads(line)
+                                it = e.get("iteration")
+                                if it is not None and isinstance(it, (int, float)):
+                                    max_iter = max(max_iter, int(it))
+                            except Exception:
+                                pass
+                    state_iter = state.get("iteration", 0)
+                    if state_iter is not None and isinstance(state_iter, (int, float)):
+                        state_iter = int(state_iter)
+                    else:
+                        state_iter = 0
+                    if max_iter > state_iter:
+                        state["iteration"] = max_iter
+            except Exception:
+                pass
+            return state
         except Exception:
             pass
     return {"integral": {}, "prev_error": {}, "iteration": 0, "last_update": None}
@@ -188,6 +232,29 @@ def load_pid_state(path: str = None) -> dict:
 
 def save_pid_state(state: dict, path: str = None):
     Path(path or PID_STATE_PATH).write_text(json.dumps(state, indent=2, ensure_ascii=False))
+
+
+# ════════════════════════════════════════════════════════════════════
+# 文件解析辅助函数（供各脚本统一调用）
+# ════════════════════════════════════════════════════════════════════
+
+def file_get(content: str, pattern: str, default: str = "") -> str:
+    """从文件内容中用正则提取字符串字段，兼容 metadata 嵌套"""
+    m = re.search(pattern, content)
+    if m:
+        return m.group(1).strip()
+    return default
+
+
+def file_float(content: str, pattern: str, default: float = 0.0) -> float:
+    """从文件内容中用正则提取浮点数字段"""
+    m = re.search(pattern, content)
+    if m:
+        try:
+            return float(m.group(1))
+        except ValueError:
+            pass
+    return default
 
 
 # ════════════════════════════════════════════════════════════════════

@@ -1,12 +1,11 @@
-- [User Profile](user-profile.md) — 用户画像：A股量化交易者，研究方向与兴趣
-- [Workspace Quant](workspace-quant.md) — A股量化研究工作区（因子、回测、数据管道）
-- [Scripts Toolset](scripts-toolset.md) — 实用脚本集（七星日报、LOF、OCR、记忆系统控制器）
-- [Hindsight System](hindsight-system.md) — Hindsight 记忆系统 Mono-Repo 概况
-- [ShareFolder Data](sharefolder-data.md) — Samba 共享目录结构与内容索引
-- [Docker Services](docker-services.md) — 运行中的 Docker 容器与服务
-- [Memory System Design](memory-system-design.md) — 基于工程控制论的自调节、自进化记忆系统设计（蓝图）
-- [Gap Analysis](gap-analysis.md) — 当前系统 vs 控制论理想的差距分析
-- [Environment](environment-doc.md) — 系统环境说明文档
+- [User Profile](user-profile.md) — 用户画像：A股量化交易者，研究方向与兴趣 [~80 tok]
+- [Workspace Quant](workspace-quant.md) — A股量化研究工作区（因子、回测、数据管道） [~80 tok]
+- [Scripts Toolset](scripts-toolset.md) — 实用脚本集（七星日报、LOF、OCR、记忆系统控制器） [~100 tok]
+- [ShareFolder Data](sharefolder-data.md) — Samba 共享目录结构与内容索引 [~100 tok]
+- [Docker Services](docker-services.md) — 运行中的 Docker 容器与服务 [~80 tok]
+
+> ℹ️ 另有 **3 条低层级记忆**可通过 `search_memories` 或 `list_memories` 搜索获取：环境文档、Karpathy 准则、故障记录。
+> 📋 月度综合：[2026年7月](compounds/2026-07.md)
 
 ## 系统组件
 
@@ -25,4 +24,3 @@
 ```
 访问更新 → 遗忘衰减 → PID调参 → 会话分析 → 自动创建记忆 → 内容完善 → 元学习诊断 → 合并重复 → 边界放宽 → 状态报告
 ```
-- [Karpathy 编码准则已安装](karpathy-guidelines-installed.md) — 4条LLM编码准则写入CLAUDE.md

@@ -144,8 +144,11 @@ def hindsight_memory_count() -> dict:
     """Hindsight 中的记忆数量"""
     r = urllib.request.urlopen(f"{HINDSIGHT_BANK}/stats", timeout=5)
     data = json.loads(r.read())
-    count = data.get("stats", {}).get("memory_count", data.get("memory_count", 0))
-    return {"ok": count > 0, "detail": f"{count} 条记忆"}
+    count = data.get("total_nodes", data.get("stats", {}).get("memory_count", data.get("memory_count", 0)))
+    total_obs = data.get("total_observations", 0)
+    total_docs = data.get("total_documents", 0)
+    detail = f"{count} 个节点, {total_docs} 文档, {total_obs} 观测" if count > 0 else "0 条记忆"
+    return {"ok": count > 0, "detail": detail}
 
 
 def config_integrity() -> dict:

@@ -358,6 +358,16 @@ def main():
     # 状态更新
     run_status_update()
 
+    # 反射层（周级：只在周日运行）
+    if datetime.datetime.now().weekday() == 6:
+        log("── 反射层: 周级自动反思 ──")
+        try:
+            import memory_reflector
+            memory_reflector.reflect()
+            log("✓ 周反思完成")
+        except Exception as e:
+            from error_alert import alert_warn; alert_warn("memory_reflector", "exception", str(e)[:100])
+
     log("=== 自迭代完成 ===\n")
 
 

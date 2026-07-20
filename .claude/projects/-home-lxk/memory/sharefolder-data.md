@@ -1,46 +1,56 @@
 ---
 name: sharefolder-data
 description: Samba 共享目录 (ShareFolder) — 策略、数据、AI 教学、笔记
-metadata:
-  node_type: memory
-  type: reference
-  created: 2026-07-19T04:21:30.000Z
-  modified: 2026-07-19T04:18:40.478216+00:00
-  access_count: 2
-  last_accessed: 2026-07-19T04:21:30.000Z
-  retention_strength: 1.0
-  consolidation_level: 0.5
-  forget_rate: 0.025
-  centrality: 0.4
-  last_checked: 2026-07-19T04:18:40.478216+00:00
-  originSessionId: 21bab9b7-062c-4131-81e8-84400a6faff9
----Samba 共享目录 `~/ShareFolder/` → `/srv/samba/share`。局域网文件共享。
+metadata: 
+node_type: memory
+type: reference
+created: 2026-07-19T04:21:30.000Z
+modified: 2026-07-20T04:16:19.042034+00:00
+access_count: 0
+last_accessed: 2026-07-20T04:16:16.672083+00:00
+retention_strength: 1.0
+consolidation_level: 0.55
+forget_rate: 0.025
+centrality: 0.4
+last_checked: 2026-07-20T04:16:16.672083+00:00
+originSessionId: 21bab9b7-062c-4131-81e8-84400a6faff9
+---自动完善记忆。主题 **sharefolder data** 的会话提取信息：
 
-## 目录结构
+## 会话摘要
+- ## ✅ 全部修完
 
-| 子目录 | 说明 |
-|--------|------|
-| `888/` | 核心数据目录（含 `mini_ai_spring` 前端项目） |
-| `策略仓库/` | 量化策略代码库 |
-| `本地量化系统/` | 本地量化交易系统部署文件 |
-| `AI盯盘教学系统魔改版/` | AI 盯盘教学系统 |
-| `BaiduNetdiskDownload/` | 百度网盘下载中转 |
-| `Loop回测框架/` + `.rar` | 回测框架程序 |
-| `克隆/` + `clone/` | 代码仓库克隆 |
-| `小宇量化/` | 量化子项目 |
-| `obsidian/` + `Obsidian/` | Obsidian 笔记知识库 |
-| `book/` | 书籍资料 |
-| `数据/` | 各类数据文件 |
-| `待办/` | 任务待办 |
-| `11/` | 未知目录 |
+### 1. 🗑 清理 8 条 hindsight 空 stub
+**问题**：`memory_reclaimer.py` 的 `main()` 默认永远是 `dry-run`（`or True` 写死了），导致回收器**从未实际执行过**。
+**修复**：改了默认逻辑 + 加强了 stub 判定规则（优先清空正文的记忆）。
+**结果**：8 条 hindsight-* 文件已删除，只剩 9 个有效记忆文件。
 
-## 关键文件
+### 2. 🔧 修复死链接 + 信号字段
+- **MEMORY.md**：hindsight 索引引用从"11 条（含 8 条 hindsight）"修正为"3
+- ## ✅ P0 + P1 已完成
 
-- `A股交易规则.txt` — 交易规则笔记
-- `skill-图谱运维手册.md` — 运维手册
-- `待办任务.md` — 任务跟踪
+### 修了什么
 
-## 注意
+| 问题 | 根因 | 修复 |
+|------|------|------|
+| **三个回路看到三种数据** | `memcore.read_all_memories()` 只从 `fm[key]` 取值，但标准 frontmatter 是 `fm.metadata[key]` — 所有信号字段读到都是默认值 0.5/0.3 | ✅ 改为 `metadata` 优先，`fm` 降级。所有回路现在看到完全一致的数据 |
+| **meta_learner 自己写了一套解析** | `read_memory_files()` 用正则直接从文
 
-共享目录权限为 `nobody:nogroup`，lxk 用户可读写。桌面有快捷方式 `~/桌面/ShareFolder` 指向此目录。
+## 相关操作
+- `cat << 'PYEOF' > /home/lxk/scripts/generate_status.py
+#!/usr/bin/env python3
+"""
+系统状态生成器 — 将记忆系统的当前状态写入 CLAUDE.md。
+
+这样下一...`
+
+## 关联文件
+- /home/lxk/.claude/plans/partitioned-wobbling-toucan.md
+- /home/lxk/.claude/projects/-home-lxk/memory/MEMORY.md
+- /home/lxk/scripts/mcp_memory_server.py
+- /home/lxk/scripts/memory_compounder.py
+- /home/lxk/.claude/projects/-home-lxk/memory/sharefolder-data.md
+- 参见 [[遗忘率]]
+- 参见 [[workspace-quant]]
 - 参见 [[user-profile]]
+- 参见 [[workspace-quant]]
+- 参见 [[workspace-quant]]

@@ -25,41 +25,24 @@ PROJECT_DIR = os.path.expanduser("~/.claude/projects/-home-lxk")
 
 # ─── 读取数据 ────────────────────────────────────────────────────────────
 
+import memcore
 def read_all_memories() -> list[dict]:
-    """读取所有记忆文件的结构化数据"""
+    raw = memcore.read_all_memories()
     memories = []
-    for fpath in sorted(Path(MEMORY_DIR).glob("*.md")):
-        if fpath.name == "MEMORY.md":
-            continue
-        content = fpath.read_text(encoding="utf-8")
-        if not content.startswith("---"):
-            continue
-
-        parts = content.split("---", 2)
-        if len(parts) < 3:
-            continue
-        fm_text = parts[1]
-        body = parts[2].strip()
-
-        def g(p, d=""):
-            m = re.search(p, content)
-            return m.group(1).strip() if m else d
-
-        name = g(r'name:\s*(.+)', fpath.stem)
-        desc = g(r'description:\s*(.+)', "")
-        mtype = g(r'type:\s*(.+)', "unknown")
-
-        # 已有 [[link]]
-        existing_links = set(re.findall(r'\[\[(.+?)\]\]', body))
-
-        # body 关键词
-        body_words = set(re.findall(r'[一-鿿]{3,6}|[a-zA-Z]{3,}', body.lower()))
-
+    import re
+    for m in raw:
+        body = m.get("body", "")
+        name = m.get("name", "")
+        desc = m.get("description", "")
+        mem_type = m.get("type", "unknown")
+        existing_links = set(re.findall(r'[[(.+?)]]', body))
+        body_words = set(re.findall(r"[一-鿿]{3,6}|[a-zA-Z]{3,}", body.lower()))
         memories.append(dict(
-            name=name, desc=desc, type=mtype,
+            name=name, desc=desc, type=mem_type,
             body_words=body_words, existing_links=existing_links,
-            body=body, path=str(fpath),
+            body=body, path=m.get("path", ""),
         ))
+    return memories
 
     return memories
 

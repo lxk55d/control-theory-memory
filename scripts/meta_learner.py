@@ -46,32 +46,25 @@ def load_history(n=50):
     return _rh(n)
 
 def read_memory_files():
-    """读取所有记忆文件，返回结构化列表"""
-    mem_dir = Path(MEMORY_DIR)
+    """读取所有记忆文件，返回结构化列表（基于 memcore，保证跨回路一致）"""
+    import memcore
+    raw = memcore.read_all_memories()
     memories = []
-    for fpath in sorted(mem_dir.glob("*.md")):
-        if fpath.name == "MEMORY.md":
-            continue
-        content = fpath.read_text(encoding="utf-8")
-        if not content.startswith("---"):
-            continue
-
-        def g(p, d=""):
-            m = re.search(p, content)
-            return m.group(1).strip() if m else d
-        def gf(p, d=0.5):
-            m = re.search(p, content)
-            return float(m.group(1)) if m else d
-
+    for m in raw:
+        fm = m.get("frontmatter", {})
+        meta = fm.get("metadata", {}) or {}
+        def _g(key, default=""):
+            v = meta.get(key) or fm.get(key)
+            return v if v is not None else default
         memories.append(dict(
-            name=g(r'name:\s*(.+)', fpath.stem),
-            description=g(r'description:\s*(.+)', ''),
-            mem_type=g(r'type:\s*(.+)', 'unknown'),
-            retention=gf(r'retention_strength:\s*([\d.]+)', 0.5),
-            consolidation=gf(r'consolidation_level:\s*([\d.]+)', 0.3),
-            access_count=int(gf(r'access_count:\s*(\d+)', 0)),
-            forget_rate=gf(r'forget_rate:\s*([\d.]+)', 0.03),
-            path=str(fpath.relative_to(mem_dir.parent.parent.parent)),
+            name=m.get("name", ""),
+            description=m.get("description", ""),
+            mem_type=m.get("type", "unknown"),
+            retention=float(_g("retention_strength", 0.5)),
+            consolidation=float(_g("consolidation_level", 0.3)),
+            access_count=int(float(_g("access_count", 0))),
+            forget_rate=float(_g("forget_rate", 0.03)),
+            path=_g("path", m.get("fname", "")),
         ))
     return memories
 

@@ -207,27 +207,38 @@ def analyze_log(session_path: Path, dry_run: bool = False) -> dict:
 
     return result
 
+    import memcore as _mc
 
 def extract_novel_topics(analysis: dict) -> list[str]:
-    """与已有记忆对比，找出新主题"""
-    memory_dir = Path(MEMORY_DIR)
+    """检测会话中是否有新的主题词未在现有记忆中出现"""
+    import memcore as _mc
+    existing_names = {m["name"].lower() for m in _mc.read_all_memories() if m.get("name")}
     existing_keywords = set()
-    for fpath in memory_dir.glob("*.md"):
-        if fpath.name == "MEMORY.md":
-            continue
-        content = fpath.read_text(encoding="utf-8")
-        dm = re.search(r'description:\s*(.+)', content)
-        if dm:
-            desc = dm.group(1)
-            for w in re.findall(r'[一-鿿]{2,6}|[a-zA-Z][a-zA-Z0-9_\-.]{2,}', desc):
-                existing_keywords.add(w.lower())
-        # 也提取 name 字段
-        nm = re.search(r'name:\s*(.+)', content)
-        if nm:
-            for w in re.findall(r'[a-zA-Z][a-zA-Z0-9_\-.]{2,}', nm.group(1)):
-                existing_keywords.add(w.lower())
+    for m in _mc.read_all_memories():
+        desc = m.get("description", "")
+        import re
+        for w in re.findall(r"[一-鿿]{2,6}|[a-zA-Z][a-zA-Z0-9_\-.]{2,}", desc):
+            existing_keywords.add(w.lower())
+        name = m.get("name", "")
+        for w in re.findall(r"[a-zA-Z][a-zA-Z0-9_\-.]{2,}", name):
+            existing_keywords.add(w.lower())
 
     novel = []
+    for topic in analysis.get("top_topics", []):
+        if topic.lower() not in existing_keywords:
+            novel.append(topic)
+    return novel
+    import memcore as _mc
+    existing_names = {m["name"].lower() for m in _mc.read_all_memories() if m.get("name")}
+    existing_keywords = set()
+    for m in _mc.read_all_memories():
+        desc = m.get("description", "")
+        import re
+        for w in re.findall(r"[一-鿿]{2,6}|[a-zA-Z][a-zA-Z0-9_\-.]{2,}", desc):
+            existing_keywords.add(w.lower())
+        name = m.get("name", "")
+        for w in re.findall(r"[a-zA-Z][a-zA-Z0-9_\-.]{2,}", name):
+            existing_keywords.add(w.lower())
     for topic in analysis.get("top_topics", []):
         if topic.lower() not in existing_keywords:
             novel.append(topic)

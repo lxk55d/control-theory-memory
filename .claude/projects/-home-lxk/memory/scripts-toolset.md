@@ -1,52 +1,57 @@
 ---
 name: scripts-toolset
 description: 实用脚本集 — 七星级ETF日报、LOF数据、OCR、Hindsight运维
-metadata:
-  node_type: memory
-  type: project
-  created: 2026-07-19T04:20:30.000Z
-  modified: 2026-07-19T04:18:26.339036+00:00
-  access_count: 2
-  last_accessed: 2026-07-19T04:20:30.000Z
-  retention_strength: 1.0
-  consolidation_level: 0.65
-  forget_rate: 0.015
-  centrality: 0.5
-  last_checked: 2026-07-19T04:18:26.339036+00:00
-  originSessionId: 21bab9b7-062c-4131-81e8-84400a6faff9
----实用脚本集，路径 `~/scripts/`。
+metadata: 
+node_type: memory
+type: project
+created: 2026-07-19T04:20:30.000Z
+modified: 2026-07-20T04:16:18.486048+00:00
+access_count: 0
+last_accessed: 2026-07-20T04:16:16.672083+00:00
+retention_strength: 1.0
+consolidation_level: 0.7
+forget_rate: 0.015
+centrality: 0.5
+last_checked: 2026-07-20T04:16:16.672083+00:00
+originSessionId: 21bab9b7-062c-4131-81e8-84400a6faff9
+---自动完善记忆。主题 **scripts toolset** 的会话提取信息：
 
-## 量化数据类
+## 会话摘要
+- ## ✅ 全部修完
 
-| 脚本 | 说明 |
-|------|------|
-| `qixing_etf_daily_report.py` (~30KB) | **七星ETF日报** — 主力日报生成脚本 |
-| `qixing_daily_cron.sh` | 七星日报定时触发 |
-| `import_etf_daily.py` | ETF 日线数据导入数据库 |
-| `sync_all_lof.py` | LOF 全量同步 |
-| `sync_lof_data.py` | LOF 增量数据同步 |
-| `update_lof_daily.py` + `.sh` | LOF 日线更新 |
+### 1. 🗑 清理 8 条 hindsight 空 stub
+**问题**：`memory_reclaimer.py` 的 `main()` 默认永远是 `dry-run`（`or True` 写死了），导致回收器**从未实际执行过**。
+**修复**：改了默认逻辑 + 加强了 stub 判定规则（优先清空正文的记忆）。
+**结果**：8 条 hindsight-* 文件已删除，只剩 9 个有效记忆文件。
 
-## 内存系统类 (新增)
+### 2. 🔧 修复死链接 + 信号字段
+- **MEMORY.md**：hindsight 索引引用从"11 条（含 8 条 hindsight）"修正为"3
+- ## ✅ P0 + P1 已完成
 
-| 脚本 | 说明 |
-|------|------|
-| `forgetting_controller.py` | **遗忘控制器** — Ebbinghaus 衰减 + 控制论 |
-| `pid_controller.py` | **PID 自适应调参器** — 第二回路 |
-| `memory_session_hook.py` | **会话钩子** — Stop 事件自动触发 |
+### 修了什么
 
-## 其他
+| 问题 | 根因 | 修复 |
+|------|------|------|
+| **三个回路看到三种数据** | `memcore.read_all_memories()` 只从 `fm[key]` 取值，但标准 frontmatter 是 `fm.metadata[key]` — 所有信号字段读到都是默认值 0.5/0.3 | ✅ 改为 `metadata` 优先，`fm` 降级。所有回路现在看到完全一致的数据 |
+| **meta_learner 自己写了一套解析** | `read_memory_files()` 用正则直接从文
 
-| 脚本 | 说明 |
-|------|------|
-| `rapidocr_cli.py` | 命令行 OCR 工具 |
-| `hindsight_backfill.py` | Hindsight 数据回填 |
-| `hindsight_strip.py` | Hindsight 数据清理 |
-| `hindsight_safe_patch.sh` | 安全补丁脚本 |
+## 相关操作
+- `cat << 'PYEOF' > /home/lxk/scripts/generate_status.py
+#!/usr/bin/env python3
+"""
+系统状态生成器 — 将记忆系统的当前状态写入 CLAUDE.md。
 
-## 定时任务
+这样下一...`
 
-- `qixing_daily_cron.sh` 通过外部 cron 每日执行
-- `forgetting_controller.py` 通过 `crontab` 凌晨 3:17 执行
+## 关联文件
+- /home/lxk/.claude/plans/partitioned-wobbling-toucan.md
+- /home/lxk/.claude/projects/-home-lxk/memory/MEMORY.md
+- /home/lxk/scripts/mcp_memory_server.py
+- /home/lxk/scripts/memory_compounder.py
+- /home/lxk/.claude/projects/-home-lxk/memory/environment-doc.md
+- 参见 [[遗忘率]]
+- 参见 [[sharefolder-data]]
+- 参见 [[user-profile]]
+- 参见 [[workspace-quant]]
 - 参见 [[user-profile]]
 - 参见 [[workspace-quant]]

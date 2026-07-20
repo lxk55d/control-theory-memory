@@ -254,7 +254,93 @@ def detect_gaps() -> dict:
     with open(GAPS_LOG, "a") as f:
         f.write(json.dumps(report, ensure_ascii=False) + "\n")
 
+    # 自动创建存根：仅在非流水线调用时自动创建
+    if os.environ.get("AUTO_CREATE_GAPS", "").lower() in ("1", "true", "yes"):
+        auto_created = auto_create_gap_memories(gaps, existing_names)
+        if auto_created:
+            print(f"  🆕 自动创建记忆: {', '.join(auto_created)}")
+
     return report
+
+
+def auto_create_gap_memories(gaps: list[dict], existing_names: set) -> list[str]:
+    """高频空白自动创建 stub 记忆"""
+    if not gaps:
+        return []
+
+    # 读取历史中的高频主题
+    from collections import Counter
+    topic_counter = Counter()
+    if os.path.exists(GAPS_LOG):
+        try:
+            with open(GAPS_LOG) as f:
+                for line in f:
+                    try:
+                        entry = json.loads(line)
+                        for g in entry.get("gaps", []):
+                            if g.get("priority") == "high":
+                                topic_counter[g["topic"]] += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    created = []
+    # 停用词表：太通用、无意义的高频词，不应自动创建记忆
+    AUTO_CREATE_STOP_WORDS = {
+        'lines', 'system', 'files', 'status', 'stub', 'round',
+        'memory.md', 'code', 'server', 'host', 'source',
+        'quality', 'claimcount', 'angle', 'home', 'error',
+    }
+    for g in gaps:
+        if g.get("priority") != "high":
+            continue
+        topic = g["topic"]
+        topic_lower = topic.lower().strip()
+        # 停用词过滤
+        if topic_lower in AUTO_CREATE_STOP_WORDS:
+            continue
+        # 安全过滤：topic 太通用或含非法字符则跳过
+        if len(topic) < 3 or not re.match(r'^[\w一-鿿\-_.]+$', topic):
+            continue
+        if topic_lower in existing_names:
+            continue
+        # 检查是否在最近 3 次检测中都出现
+        count = topic_counter.get(topic, 0)
+        if count >= 3:
+            fname = f"{topic.lower().replace(' ', '-').replace('.', '-')}.md"
+            fpath = os.path.join(MEMORY_DIR, fname)
+            if not os.path.exists(fpath):
+                now = datetime.datetime.now(datetime.timezone.utc)
+                content = f"""---
+name: {topic}
+description: 知识空白 — 自动创建的占位记忆（高频话题）
+metadata:
+  node_type: memory
+  type: reference
+  created: {now.isoformat()}
+  modified: {now.isoformat()}
+  access_count: 0
+  last_accessed: {now.isoformat()}
+  retention_strength: 0.9
+  consolidation_level: 0.3
+  forget_rate: 0.1
+  centrality: 0.05
+  last_checked: {now.isoformat()}
+---
+
+自动完善的占位记忆。关于 **{topic}** 的会话提取信息：
+
+（待后续会话完善）
+"""
+                try:
+                    Path(fpath).write_text(content, encoding="utf-8")
+                    created.append(topic)
+                    print(f"  🆕 知识空白 → 自动创建: {topic}")
+                except Exception as e:
+                    print(f"  ⚠ 创建失败 {topic}: {e}")
+
+    return created
 
 
 def format_for_claude(gaps: list[dict]) -> dict | None:

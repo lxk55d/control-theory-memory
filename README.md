@@ -3,7 +3,7 @@
 > 基于钱学森《工程控制论》(Engineering Cybernetics, 1954) 框架设计的个人知识记忆系统。  
 > 不是一个静态数据库，而是一个 **能自我调节、持续进化的闭环控制系统**。
 
-**简体中文** · [设计文档](.claude/projects/-home-lxk/memory-system-design.md) · [差距分析](.claude/projects/-home-lxk/gap-analysis.md)
+**简体中文** · [设计文档](.claude/projects/-home-lxk/memory-system-design.md) · [差距分析](.claude/projects/-home-lxk/gap-analysis.md) · [变更日志](CHANGELOG.md)
 
 ---
 
